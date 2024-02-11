@@ -2,31 +2,33 @@ name: Update README
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'src/**'
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 * * *' # Runs at midnight every day
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Generate Markdown for README
         run: |
-          python -m pip install --upgrade pip
-          pip install PyGithub
+          python .github/scripts/update_readme.py
 
-      - name: Update README
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python .github/scripts/update_readme.py
+      - name: Commit and push if README changed
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add README.md
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automatically update README with new projects" && git push)
