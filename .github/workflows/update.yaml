@@ -7,8 +7,8 @@ on:
       - main
     paths:
       - 'src/**'
-  schedule:
-    - cron:  '0 0 * * *' # Runs at midnight every day
+#  schedule:
+#    - cron:  '0 0 * * *' # Runs at midnight every day
 
 jobs:
   update-readme:
