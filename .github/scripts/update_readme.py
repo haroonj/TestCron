@@ -64,8 +64,10 @@ def update_readme(problems):
     repo.update_file(contents.path, "Update README with latest problems list", readme_content, contents.sha)
 
 def main():
-    file_list = get_file_list("src")  # Assuming all your code is under the src directory
+    file_list = get_file_list("src")
+    print('file_list', file_list)
     problems = categorize_problems(file_list)
+    print('problems', problems)
     update_readme(problems)
 
 if __name__ == "__main__":
