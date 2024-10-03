@@ -18,30 +18,15 @@ jobs:
         echo "${{ github.token }}" > ~/.gh_token
         gh auth login --with-token < ~/.gh_token
 
-    - name: Get current and previous release information
-      run: |
-        # Get the current release tag and date
-        current_release_tag="${{ github.event.release.tag_name }}"
-        current_release_date=$(gh release view "${current_release_tag}" --json createdAt --jq '.createdAt')
-
-        # Get the previous release tag and date (assuming the releases are sorted by date)
-        previous_release_tag=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
-        previous_release_date=$(gh release view "${previous_release_tag}" --json createdAt --jq '.createdAt')
-
-        echo "Current release tag: $current_release_tag"
-        echo "Current release date: $current_release_date"
-        echo "Previous release tag: $previous_release_tag"
-        echo "Previous release date: $previous_release_date"
-
-        echo "PREVIOUS_RELEASE_DATE=$previous_release_date" >> $GITHUB_ENV
-        echo "CURRENT_RELEASE_DATE=$current_release_date" >> $GITHUB_ENV
-
-    - name: Get merged PRs between releases
+    - name: Get merged PRs for the release
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        echo "Fetching merged PRs between ${PREVIOUS_RELEASE_DATE} and ${CURRENT_RELEASE_DATE}..."
-        PRS=$(gh pr list --state merged --json title,url,mergedAt,author --search "merged:${PREVIOUS_RELEASE_DATE}..${CURRENT_RELEASE_DATE}")
+        # Assuming the release is based on the 'main' branch
+        RELEASE_BRANCH="main"
+
+        echo "Fetching merged PRs into ${RELEASE_BRANCH}..."
+        PRS=$(gh pr list --state merged --base "${RELEASE_BRANCH}" --json title,url,mergedAt,author --limit 100) # Increase limit here
         echo "PR Data: $PRS"
         echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
 
