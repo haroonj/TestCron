@@ -16,7 +16,7 @@ jobs:
         id: get_previous_tag
         run: |
           # Find the previous tag, fallback to an empty string if none exists
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ || echo "")
+          PREVIOUS_TAG=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
           echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
 
       - name: Check if previous tag exists
