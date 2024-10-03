@@ -12,8 +12,12 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2
 
+    - name: Set up GitHub CLI
+      run: gh auth login --with-token <<< "${{ github.token }}"
+
     - name: Get merged PRs for the release
-      id: get_prs
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         PRS=$(gh pr list --state merged --search "is:merged" --json title,url,mergedAt,authorLogin)
         echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
