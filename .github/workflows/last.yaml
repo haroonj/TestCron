@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  send-mixpanel-annotations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get previous tag
+        id: get_previous_tag
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
+
+      - name: Get merged PRs since the last release
+        run: |
+          CURRENT_TAG=${{ github.ref_name }}
+          PREVIOUS_TAG=${{ env.PREVIOUS_TAG }}
+
+          # Get the merged PRs between the current and previous tags
+          PRS=$(curl -s -H "Authorization: token ${{ github.token }}" "https://api.github.com/repos/${{ github.repository }}/compare/$PREVIOUS_TAG...$CURRENT_TAG" | \
+                jq '.commits[] | select(.commit.message | contains("Merge pull request")) | {title: .commit.message, merged_at: .commit.committer.date, number: .commit.message | match("#([0-9]+)") | .string}')
+
+          # Loop through each PR and send the annotation
+          for row in $(echo "${PRS}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+
+            PRTitle=$(_jq '.title' | sed 's/Merge pull request //g' | cut -d " " -f 2-)
+            PRUser="githubuser" # You can customize or extract the actual user if needed
+            PRMergedAt=$(_jq '.merged_at')
+
+            echo "(v${{ github.ref_name }}: $PRTitle @$PRUser)\"
+
+          done
