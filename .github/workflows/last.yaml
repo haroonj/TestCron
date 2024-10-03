@@ -12,6 +12,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get install gh
+
+      - name: Authenticate with GitHub CLI
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
       - name: Get previous tag
         id: get_previous_tag
         run: |
@@ -29,20 +37,19 @@ jobs:
           CURRENT_TAG=${{ github.ref_name }}
           PREVIOUS_TAG=${{ env.PREVIOUS_TAG }}
 
-          # Get the merged PRs between the current and previous tags
-          PRS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/compare/$PREVIOUS_TAG...$CURRENT_TAG" | \
-                jq '.commits[] | select(.commit.message | contains("Merge pull request")) | {title: .commit.message, merged_at: .commit.committer.date, number: .commit.message | match("#([0-9]+)") | .string}')
+          # Use GitHub CLI to get the merged PRs between the two tags
+          PRS=$(gh pr list --state merged --search "merged:>=`git show -s --format=%ci $PREVIOUS_TAG`" --json title,mergedAt,author --jq '.[]')
 
           # Print the PR details instead of sending to Mixpanel for testing
           echo "Merged PRs since last release:"
-          for row in $(echo "${PRS}" | jq -r '.[] | @base64'); do
+          for row in $(echo "${PRS}" | jq -r '. | @base64'); do
             _jq() {
               echo ${row} | base64 --decode | jq -r ${1}
             }
 
-            PRTitle=$(_jq '.title' | sed 's/Merge pull request //g' | cut -d " " -f 2-)
-            PRUser="githubuser" # You can customize or extract the actual user if needed
-            PRMergedAt=$(_jq '.merged_at')
+            PRTitle=$(_jq '.title')
+            PRUser=$(_jq '.author.login')
+            PRMergedAt=$(_jq '.mergedAt')
 
             echo "PR Title: $PRTitle"
             echo "Merged At: $PRMergedAt"
