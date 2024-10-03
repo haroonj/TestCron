@@ -14,18 +14,28 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up GitHub CLI
-      run: gh auth login --with-token <<< "${{ github.token }}"
+      run: |
+        echo "${{ github.token }}" > ~/.gh_token
+        gh auth login --with-token < ~/.gh_token
 
     - name: Get merged PRs for the release
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
+        echo "Fetching merged PRs..."
         PRS=$(gh pr list --state merged --search "is:merged" --json title,url,mergedAt,author)
+        echo "PR Data: $PRS"
         echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
 
-    - name: Add annotations to Mixpanel for each PR
+    - name: Print annotation text for each PR
       run: |
-        echo "Processing PRs to add annotations to Mixpanel"
+        echo "Processing PRs to print annotations"
+
+        # Check if the PRS variable is empty
+        if [ -z "${MERGED_PRS}" ]; then
+          echo "No merged PRs found for the release."
+          exit 0
+        fi
 
         # Set the version number dynamically from the release tag
         version="${{ github.event.release.tag_name }}"
@@ -39,9 +49,9 @@ jobs:
           # Construct annotation text in the required format (version: PR Title by @githubuser)
           annotation_text="(version: ${version}: ${title} by @${githubuser})"
 
-          echo "Creating annotation for PR: ${title} by @${githubuser}"
-
+          # Print the annotation text for testing
+          echo "Annotation text: ${annotation_text}"
         done
 
-    - name: Confirm annotation creation
-      run: echo "Mixpanel annotations have been created successfully!"
+    - name: Confirm test completion
+      run: echo "Test run for printing annotation texts completed."
