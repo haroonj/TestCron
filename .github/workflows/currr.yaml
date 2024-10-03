@@ -40,10 +40,10 @@ jobs:
         # Set the version number dynamically from the release tag
         version="${{ github.event.release.tag_name }}"
 
-        for pr in $(echo "${MERGED_PRS}" | jq -c '.[]'); do
-          title=$(echo $pr | jq -r '.title')
-          url=$(echo $pr | jq -r '.url')
-          githubuser=$(echo $pr | jq -r '.author')
+        echo "${MERGED_PRS}" | jq -c '.[]' | while read -r pr; do
+          title=$(echo "$pr" | jq -r '.title')
+          url=$(echo "$pr" | jq -r '.url')
+          githubuser=$(echo "$pr" | jq -r '.author.login')
           release_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           # Construct annotation text in the required format (version: PR Title by @githubuser)
