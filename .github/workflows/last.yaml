@@ -3,14 +3,14 @@ name: Release
 on:
   workflow_dispatch:
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   send-mixpanel-annotations:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Get previous tag
         id: get_previous_tag
@@ -21,7 +21,8 @@ jobs:
 
       - name: Check if previous tag exists
         if: env.PREVIOUS_TAG != ''
-        run: echo "Previous tag found: ${{ env.PREVIOUS_TAG }}"
+        run:
+          echo "Previous tag found: ${{ env.PREVIOUS_TAG }}"
 
       - name: Get merged PRs since the last release
         if: env.PREVIOUS_TAG != ''
