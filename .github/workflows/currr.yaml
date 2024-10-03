@@ -20,7 +20,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        PRS=$(gh pr list --state merged --search "is:merged" --json title,url,mergedAt,authorLogin)
+        PRS=$(gh pr list --state merged --search "is:merged" --json title,url,mergedAt,author)
         echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
 
     - name: Add annotations to Mixpanel for each PR
@@ -33,7 +33,7 @@ jobs:
         for pr in $(echo "${MERGED_PRS}" | jq -c '.[]'); do
           title=$(echo $pr | jq -r '.title')
           url=$(echo $pr | jq -r '.url')
-          githubuser=$(echo $pr | jq -r '.authorLogin')
+          githubuser=$(echo $pr | jq -r '.author')
           release_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           # Construct annotation text in the required format (version: PR Title by @githubuser)
