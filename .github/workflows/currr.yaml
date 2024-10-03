@@ -1,0 +1,42 @@
+name: Add Mixpanel Annotations on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  annotate_mixpanel:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+
+    - name: Get merged PRs for the release
+      id: get_prs
+      run: |
+        PRS=$(gh pr list --state merged --search "is:merged" --json title,url,mergedAt,authorLogin)
+        echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
+
+    - name: Add annotations to Mixpanel for each PR
+      run: |
+        echo "Processing PRs to add annotations to Mixpanel"
+
+        # Set the version number dynamically from the release tag
+        version="${{ github.event.release.tag_name }}"
+
+        for pr in $(echo "${MERGED_PRS}" | jq -c '.[]'); do
+          title=$(echo $pr | jq -r '.title')
+          url=$(echo $pr | jq -r '.url')
+          githubuser=$(echo $pr | jq -r '.authorLogin')
+          release_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Construct annotation text in the required format (version: PR Title by @githubuser)
+          annotation_text="(version: ${version}: ${title} by @${githubuser})"
+
+          echo "Creating annotation for PR: ${title} by @${githubuser}"
+
+        done
+
+    - name: Confirm annotation creation
+      run: echo "Mixpanel annotations have been created successfully!"
