@@ -1,6 +1,7 @@
 name: Add Mixpanel Annotations on Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
