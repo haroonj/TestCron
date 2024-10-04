@@ -6,31 +6,19 @@ on:
     types: [published]
 
 jobs:
-  print-merged-prs:
+  list_merged_prs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Get commits since last tag
-        id: get_commits
-        run: |
-          last_tag=$(git describe --tags --abbrev=0 HEAD^)
-          git log ${last_tag}..HEAD --pretty=format:"%H" > commits.txt
-          echo "commits=$(cat commits.txt)" >> $GITHUB_ENV
+      - name: List merged pull requests in this release
+        uses: repo-sync/github-sync-pull-request@v2.1.0
+        with:
+          token: ${{ github.token }}
+          event: release
+          target_branch: main
+          base: ${{ github.event.release.tag_name }}
 
-      - name: Get Merged PRs
-        id: get_prs
-        run: |
-          echo "Merged PRs:"
-          while IFS= read -r commit_hash; do
-            pr_number=$(gh pr list --search "$commit_hash" --state merged --json number --jq '.[0].number')
-            if [[ -n "$pr_number" ]]; then
-              echo "PR #$pr_number"
-            fi
-          done < commits.txt
-
-      - name: Print merged PRs
-        run: |
-          echo "The following PRs were merged in this release:"
-          cat commits.txt
+      - name: Print result
+        run: echo "Merged PRs have been listed!"
