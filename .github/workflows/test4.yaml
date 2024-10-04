@@ -1,6 +1,7 @@
 name: Print Merged PRs on Release
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
