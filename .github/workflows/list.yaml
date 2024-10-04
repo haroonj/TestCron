@@ -1,0 +1,51 @@
+name: List
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+  list_merged_prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install gh
+
+      - name: Fetch latest release tag
+        id: fetch_release
+        run: |
+          latest_release=$(gh release view --json tagName --jq '.tagName')
+          echo "LATEST_TAG=$latest_release" >> $GITHUB_ENV
+
+      - name: Fetch previous release tag
+        id: fetch_prev_release
+        run: |
+          prev_release=$(git describe --tags --abbrev=0 ${{ env.LATEST_TAG }}^)
+          echo "PREVIOUS_TAG=$prev_release" >> $GITHUB_ENV
+
+      - name: Fetch commit list between releases
+        id: fetch_commits
+        run: |
+          git log --oneline ${{ env.PREVIOUS_TAG }}..${{ env.LATEST_TAG }} > commits.txt
+          echo "Commit range: ${{ env.PREVIOUS_TAG }} to ${{ env.LATEST_TAG }}"
+          echo "commits=$(cat commits.txt)" >> $GITHUB_ENV
+
+      - name: List PRs merged in the latest release
+        run: |
+          echo "Merged PRs in the latest release:"
+          while IFS= read -r commit; do
+            commit_hash=$(echo $commit | awk '{print $1}')
+            pr_number=$(gh pr list --search "$commit_hash" --state merged --json number --jq '.[0].number')
+            if [[ -n "$pr_number" ]]; then
+              echo "PR #$pr_number merged with commit $commit_hash"
+            fi
+          done < commits.txt
