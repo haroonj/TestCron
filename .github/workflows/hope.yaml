@@ -47,12 +47,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "Merged PRs between ${{ env.previous_release_date }} and ${{ env.last_release_date }}:"
-          gh pr list --state merged --json number,title,mergeCommit,mergedAt \
-            --search "merged:>=${{ env.previous_release_date }} merged:<${{ env.last_release_date }}" \
-            --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' \
-            | while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+          echo "Fetching all merged PRs..."
+          gh pr list --state merged --json number,title,mergeCommit,mergedAt --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' > merged_prs.csv
+          
+          echo "Filtering PRs merged between ${{ env.previous_release_date }} and ${{ env.last_release_date }}:"
+          cat merged_prs.csv | while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+            # Check if PR's merged_at is between the two release dates
+            if [[ "$pr_merged_at" > "${{ env.previous_release_date }}" && "$pr_merged_at" < "${{ env.last_release_date }}" ]]; then
               echo "PR #$pr_number: $pr_title merged at $pr_merged_at, commit SHA: $pr_commit_sha"
+            fi
             done
 
       # Step 5: Cleanup Git configurations
