@@ -11,16 +11,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the repository
+      - name: Checkout the repository with tags
         uses: actions/checkout@v3
-
-#      - name: Install GitHub CLI
-#        run: |
-#          sudo apt update
-#          sudo apt install gh
+        with:
+          fetch-depth: 0  # Fetch all commit history and tags
 
       - name: List all merged PRs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr list --state merged --json number,title,mergedAt --jq '.[] | "PR #\(.number): \(.title) merged at \(.mergedAt)"'
+          gh release list --json tagName,publishedAt --jq '.[] | "\(.tagName)"' > releases.txt
+
+      - name: List merged PRs with their release tags
+        run: |
+          echo "Merged PRs with their associated releases:"
+          gh pr list --state merged --json number,title,mergeCommitSha,mergedAt --jq '.[] | [.number, .title, .mergeCommitSha, .mergedAt] | @csv' > merged_prs.csv
+          
+          # Loop through PRs and match them with releases
+          while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+            for release in $(cat releases.txt); do
+              if git merge-base --is-ancestor "$pr_commit_sha" "$release"; then
+                echo "PR #$pr_number: $pr_title merged at $pr_merged_at, included in release $release"
+                break
+              fi
+            done
+          done < merged_prs.csv
