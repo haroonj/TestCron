@@ -1,0 +1,26 @@
+name: List All Merged Pull Requests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  list_merged_prs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+#      - name: Install GitHub CLI
+#        run: |
+#          sudo apt update
+#          sudo apt install gh
+
+      - name: List all merged PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr list --state merged --json number,title,mergedAt --jq '.[] | "PR #\(.number): \(.title) merged at \(.mergedAt)"'
