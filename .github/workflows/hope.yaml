@@ -1,0 +1,62 @@
+name: hope
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  list_merged_prs_between_releases:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository with tags
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all commit history and tags
+
+      # Step 2: Set up the GitHub CLI
+      - name: Set up GitHub CLI
+        run: sudo apt-get install gh -y
+
+      # Step 3: Get the last two releases and store them in a variable
+      - name: Get Last Two Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last_release=$(gh release list --limit 2 --json tagName,publishedAt --jq '.[0] | "\(.tagName) \(.publishedAt)"')
+          previous_release=$(gh release list --limit 2 --json tagName,publishedAt --jq '.[1] | "\(.tagName) \(.publishedAt)"')
+          
+          echo "Last Release: $last_release"
+          echo "Previous Release: $previous_release"
+          
+          # Extracting release dates
+          last_release_date=$(echo $last_release | awk '{print $2}')
+          previous_release_date=$(echo $previous_release | awk '{print $2}')
+          
+          echo "Last release date: $last_release_date"
+          echo "Previous release date: $previous_release_date"
+
+          # Store for later steps
+          echo "last_release_date=$last_release_date" >> $GITHUB_ENV
+          echo "previous_release_date=$previous_release_date" >> $GITHUB_ENV
+
+      # Step 4: Query and list merged PRs between the two releases
+      - name: List Merged PRs Between Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Merged PRs between ${{ env.previous_release_date }} and ${{ env.last_release_date }}:"
+          gh pr list --state merged --json number,title,mergeCommit,mergedAt \
+            --search "merged:>=${{ env.previous_release_date }} merged:<${{ env.last_release_date }}" \
+            --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' \
+            | while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+              echo "PR #$pr_number: $pr_title merged at $pr_merged_at, commit SHA: $pr_commit_sha"
+            done
+
+      # Step 5: Cleanup Git configurations
+      - name: Post job cleanup
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git config --local --unset-all core.sshCommand
