@@ -23,6 +23,8 @@ jobs:
           gh release list --json tagName,publishedAt --jq '.[] | "\(.tagName)"' > releases.txt
 
       - name: List merged PRs with their release tags
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "Merged PRs with their associated releases:"
           gh pr list --state merged --json number,title,mergeCommitSha,mergedAt --jq '.[] | [.number, .title, .mergeCommitSha, .mergedAt] | @csv' > merged_prs.csv
