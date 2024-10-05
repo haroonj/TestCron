@@ -27,10 +27,19 @@ jobs:
         run: gh release list --json tagName,publishedAt --jq '.[] | "\(.tagName)"' > releases.txt
 
       # Step 4: List merged PRs and store them in merged_prs.csv
-      - name: List Merged PRs
+      # Step 4: List and print merged PRs from the last 2 weeks
+      - name: List and Print Merged PRs from Last 2 Weeks
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr list --state merged --json number,title,mergeCommit,mergedAt --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' > merged_prs.csv
+        run: |
+          echo "Merged PRs from the last 2 weeks:"
+          gh pr list --state merged --json number,title,mergeCommit,mergedAt \
+            --search "merged:>=`date -d '2 weeks ago' +%Y-%m-%d`" \
+            --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' \
+            | while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+              echo "PR #$pr_number: $pr_title merged at $pr_merged_at, commit SHA: $pr_commit_sha"
+            done
+
 
       # Step 5: Match PRs with releases and output results
       - name: Match Merged PRs with Releases
