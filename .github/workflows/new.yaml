@@ -35,17 +35,22 @@ jobs:
       # Step 5: Match PRs with releases and output results
       - name: Match Merged PRs with Releases
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the correct GH token
         run: |
           echo "Merged PRs with their associated releases:"
+          # Loop through each PR entry in merged_prs.csv
           while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
+            # Loop through each release from releases.txt
             for release in $(cat releases.txt); do
+              # Check if the PR commit is an ancestor of the release
               if git merge-base --is-ancestor "$pr_commit_sha" "$release" 2>/dev/null; then
                 echo "PR #$pr_number: $pr_title merged at $pr_merged_at, included in release $release"
-                break
+                break  # Move to the next PR once a match is found
               fi
             done
           done < merged_prs.csv
+
+
 
       # Step 6: Cleanup Git configurations
       - name: Post job cleanup
