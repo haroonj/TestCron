@@ -27,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "Merged PRs with their associated releases:"
-          gh pr list --state merged --json number,title,mergeCommitSha,mergedAt --jq '.[] | [.number, .title, .mergeCommitSha, .mergedAt] | @csv' > merged_prs.csv
+          gh pr list --state merged --json number,title,mergeCommit,mergedAt --jq '.[] | [.number, .title, .mergeCommit, .mergedAt] | @csv' > merged_prs.csv
           
           # Loop through PRs and match them with releases
           while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
