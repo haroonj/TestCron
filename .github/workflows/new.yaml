@@ -16,26 +16,39 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all commit history and tags
 
-      - name: List all merged PRs
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release list --json tagName,publishedAt --jq '.[] | "\(.tagName)"' > releases.txt
+      # Step 2: Set up the GitHub CLI
+      - name: Set up GitHub CLI
+        run: sudo apt-get install gh -y
 
-      - name: List merged PRs with their release tags
+      # Step 3: List releases and store them in releases.txt
+      - name: List Releases
+        run: gh release list --json tagName,publishedAt --jq '.[] | "\(.tagName)"' > releases.txt
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # Step 4: List merged PRs and store them in merged_prs.csv
+      - name: List Merged PRs
+        run: gh pr list --state merged --json number,title,mergeCommit,mergedAt --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' > merged_prs.csv
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # Step 5: Match PRs with releases and output results
+      - name: Match Merged PRs with Releases
         run: |
           echo "Merged PRs with their associated releases:"
-          # Extract the commit SHA from the mergeCommit object
-          gh pr list --state merged --json number,title,mergeCommit,mergedAt --jq '.[] | [.number, .title, .mergeCommit.oid, .mergedAt] | @csv' > merged_prs.csv
-          
-          # Loop through PRs and match them with releases
           while IFS=, read -r pr_number pr_title pr_commit_sha pr_merged_at; do
             for release in $(cat releases.txt); do
-              if git merge-base --is-ancestor "$pr_commit_sha" "$release"; then
+              if git merge-base --is-ancestor "$pr_commit_sha" "$release" 2>/dev/null; then
                 echo "PR #$pr_number: $pr_title merged at $pr_merged_at, included in release $release"
                 break
               fi
             done
           done < merged_prs.csv
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # Step 6: Cleanup Git configurations
+      - name: Post job cleanup
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git config --local --unset-all core.sshCommand
