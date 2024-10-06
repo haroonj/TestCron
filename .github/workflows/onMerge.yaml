@@ -17,6 +17,8 @@ jobs:
         env:
           MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
         run: |
+          echo "Creating Mixpanel annotation for PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }} (Author: ${{ github.event.pull_request.user.login }})"
+          echo "Using Mixpanel Auth Token: $MIXPANEL_AUTH_TOKEN"
           curl --request POST \
             --url 'https://mixpanel.com/api/app/workspaces/3331267/annotations' \
             --header 'authorization: Basic $MIXPANEL_AUTH_TOKEN' \
