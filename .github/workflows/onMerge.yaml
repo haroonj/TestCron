@@ -1,4 +1,4 @@
-name: Print PR Info on Merge
+name: Create Mixpanel Annotation on PR Merge
 
 on:
   pull_request:
@@ -6,17 +6,23 @@ on:
       - closed
 
 jobs:
-  print-pr-info:
+  create-annotation:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Print PR Info
+      - name: Create Mixpanel Annotation
+        env:
+          MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
         run: |
-          echo "Pull Request Title: ${{ github.event.pull_request.title }}"
-          echo "Pull Request Number: ${{ github.event.pull_request.number }}"
-          echo "Pull Request Author: ${{ github.event.pull_request.user.login }}"
-          echo "Pull Request Merged By: ${{ github.event.pull_request.merged_by.login }}"
-          echo "Pull Request URL: ${{ github.event.pull_request.html_url }}"
+          curl --request POST \
+            --url 'https://mixpanel.com/api/app/workspaces/87371/annotations' \
+            --header "Authorization: Basic $MIXPANEL_AUTH_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-raw '{
+              "date": "'$(date --utc +%Y-%m-%dT%H:%M:%SZ)'",
+              "description": "PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }} (Author: ${{ github.event.pull_request.user.login }}) Link: ${{ github.event.pull_request.html_url }}",
+              "category": "PR Merged"
+            }'
