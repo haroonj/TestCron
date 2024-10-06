@@ -28,5 +28,5 @@ jobs:
             --header "Content-Type: application/json" \
             --data-raw '{
               "date": "'"$(date +"%Y-%m-%d %H:%M:%S")"'",
-              "description": "Release: ${{ github.event.release.tag_name }} - ${{ github.event.release.name }} Link: ${{ github.event.release.html_url }}"
+              "description": "Release: ${{ github.event.release.name }} Link: ${{ github.event.release.html_url }}"
             }'
