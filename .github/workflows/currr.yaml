@@ -1,80 +1,80 @@
-name: Add Mixpanel Annotations on Release
-
-on:
-  workflow_dispatch:
-  release:
-    types: [published]
-
-jobs:
-  annotate_mixpanel:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout the code
-      uses: actions/checkout@v2
-
-    - name: Set up GitHub CLI
-      run: |
-        echo "${{ github.token }}" > ~/.gh_token
-        gh auth login --with-token < ~/.gh_token
-
-    - name: Get current and previous release tags
-      run: |
-        # Get the current release tag
-        current_release_tag="${{ github.event.release.tag_name }}"
-
-        # Get the previous release tag (we assume the releases are sorted by date)
-        previous_release_tag=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
-
-        echo "Current release tag: $current_release_tag"
-        echo "Previous release tag: $previous_release_tag"
-
-        echo "PREVIOUS_RELEASE_TAG=$previous_release_tag" >> $GITHUB_ENV
-        echo "CURRENT_RELEASE_TAG=$current_release_tag" >> $GITHUB_ENV
-
-    - name: Get PRs associated with the current release commits
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Get all commits between the previous and current release tags
-        commits=$(gh compare $PREVIOUS_RELEASE_TAG...$CURRENT_RELEASE_TAG --json commits --jq '.commits[].oid')
-
-        echo "Fetching PRs associated with the commits in the current release..."
-
-        PRS="[]"
-        for commit in $commits; do
-          pr=$(gh pr list --state merged --base main --json title,url,mergedAt,author --search "merged:$commit")
-          PRS=$(echo $PRS | jq --argjson pr "$pr" '. + $pr')
-        done
-
-        echo "PR Data: $PRS"
-        echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
-
-    - name: Print annotation text for each PR
-      run: |
-        echo "Processing PRs to print annotations"
-
-        # Check if the PRS variable is empty
-        if [ -z "${MERGED_PRS}" ]; then
-          echo "No merged PRs found for this release."
-          exit 0
-        fi
-
-        # Set the version number dynamically from the release tag
-        version="${{ github.event.release.tag_name }}"
-
-        echo "${MERGED_PRS}" | jq -c '.[]' | while read -r pr; do
-          title=$(echo "$pr" | jq -r '.title')
-          url=$(echo "$pr" | jq -r '.url')
-          githubuser=$(echo "$pr" | jq -r '.author.login')
-          release_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          # Construct annotation text in the required format (version: PR Title by @githubuser)
-          annotation_text="(version: ${version}: ${title} by @${githubuser})"
-
-          # Print the annotation text for testing
-          echo "Annotation text: ${annotation_text}"
-        done
-
-    - name: Confirm test completion
-      run: echo "Test run for printing annotation texts completed."
+#name: Add Mixpanel Annotations on Release
+#
+#on:
+#  workflow_dispatch:
+#  release:
+#    types: [published]
+#
+#jobs:
+#  annotate_mixpanel:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Checkout the code
+#      uses: actions/checkout@v2
+#
+#    - name: Set up GitHub CLI
+#      run: |
+#        echo "${{ github.token }}" > ~/.gh_token
+#        gh auth login --with-token < ~/.gh_token
+#
+#    - name: Get current and previous release tags
+#      run: |
+#        # Get the current release tag
+#        current_release_tag="${{ github.event.release.tag_name }}"
+#
+#        # Get the previous release tag (we assume the releases are sorted by date)
+#        previous_release_tag=$(gh release list --limit 2 --json tagName --jq '.[1].tagName')
+#
+#        echo "Current release tag: $current_release_tag"
+#        echo "Previous release tag: $previous_release_tag"
+#
+#        echo "PREVIOUS_RELEASE_TAG=$previous_release_tag" >> $GITHUB_ENV
+#        echo "CURRENT_RELEASE_TAG=$current_release_tag" >> $GITHUB_ENV
+#
+#    - name: Get PRs associated with the current release commits
+#      env:
+#        GH_TOKEN: ${{ github.token }}
+#      run: |
+#        # Get all commits between the previous and current release tags
+#        commits=$(gh compare $PREVIOUS_RELEASE_TAG...$CURRENT_RELEASE_TAG --json commits --jq '.commits[].oid')
+#
+#        echo "Fetching PRs associated with the commits in the current release..."
+#
+#        PRS="[]"
+#        for commit in $commits; do
+#          pr=$(gh pr list --state merged --base main --json title,url,mergedAt,author --search "merged:$commit")
+#          PRS=$(echo $PRS | jq --argjson pr "$pr" '. + $pr')
+#        done
+#
+#        echo "PR Data: $PRS"
+#        echo "MERGED_PRS=$PRS" >> $GITHUB_ENV
+#
+#    - name: Print annotation text for each PR
+#      run: |
+#        echo "Processing PRs to print annotations"
+#
+#        # Check if the PRS variable is empty
+#        if [ -z "${MERGED_PRS}" ]; then
+#          echo "No merged PRs found for this release."
+#          exit 0
+#        fi
+#
+#        # Set the version number dynamically from the release tag
+#        version="${{ github.event.release.tag_name }}"
+#
+#        echo "${MERGED_PRS}" | jq -c '.[]' | while read -r pr; do
+#          title=$(echo "$pr" | jq -r '.title')
+#          url=$(echo "$pr" | jq -r '.url')
+#          githubuser=$(echo "$pr" | jq -r '.author.login')
+#          release_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+#
+#          # Construct annotation text in the required format (version: PR Title by @githubuser)
+#          annotation_text="(version: ${version}: ${title} by @${githubuser})"
+#
+#          # Print the annotation text for testing
+#          echo "Annotation text: ${annotation_text}"
+#        done
+#
+#    - name: Confirm test completion
+#      run: echo "Test run for printing annotation texts completed."
