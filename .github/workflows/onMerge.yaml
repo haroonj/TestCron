@@ -17,12 +17,11 @@ jobs:
         env:
           MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
         run: |
-          current_date=$(date --utc +%Y-%m-%dT%H:%M:%SZ)
           curl --request POST \
             --url 'https://mixpanel.com/api/app/workspaces/3331267/annotations' \
-            --header "Authorization: Basic $(echo -n 'github.d6b7a3.mp-service-account:$MIXPANEL_AUTH_TOKEN' | base64)" \
+            --header 'authorization: Basic $MIXPANEL_AUTH_TOKEN' \
             --header "Content-Type: application/json" \
             --data-raw '{
-              "date": "'$current_date'",
+              "date": "'$(date --utc +%Y-%m-%dT%H:%M:%SZ)'",
               "description": "PR #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }} (Author: ${{ github.event.pull_request.user.login }}) Link: ${{ github.event.pull_request.html_url }}"
             }'
