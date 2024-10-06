@@ -18,7 +18,7 @@ jobs:
           MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
         run: |
           curl --request POST \
-            --url 'https://mixpanel.com/api/app/workspaces/87371/annotations' \
+            --url 'https://mixpanel.com/api/app/workspaces/3331267/annotations' \
             --header "Authorization: Basic $MIXPANEL_AUTH_TOKEN" \
             --header "Content-Type: application/json" \
             --data-raw '{
