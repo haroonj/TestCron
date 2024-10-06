@@ -19,6 +19,6 @@ jobs:
             --header 'authorization: Basic ${{ secrets.MIXPANEL_AUTH_TOKEN }}' \
             --header "Content-Type: application/json" \
             --data-raw '{
-              "date": "'"$(date --utc +"%Y-%m-%d %H:%M:%S")"'",
+              "date": "'"$(date +"%Y-%m-%d %H:%M:%S")"'",
               "description": "Release: ${{ github.event.release.tag_name }} - ${{ github.event.release.name }} Link: ${{ github.event.release.html_url }}"
             }'
