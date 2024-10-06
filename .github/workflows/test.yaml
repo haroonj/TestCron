@@ -1,0 +1,21 @@
+name: Show Me the S3cr3tz
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    name: Debug
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up secret file
+        env:
+          MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
+        run: |
+          echo MIXPANEL_AUTH_TOKEN >> secrets.txt
+
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v2
