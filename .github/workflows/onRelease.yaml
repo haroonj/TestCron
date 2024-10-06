@@ -12,6 +12,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+
+      - name: Install tzdata and set Jordan Time
+        run: |
+          sudo apt-get install -y tzdata
+          sudo ln -fs /usr/share/zoneinfo/Asia/Amman /etc/localtime
+          sudo dpkg-reconfigure -f noninteractive tzdata
+          
+
       - name: Create Mixpanel Annotation
         run: |
           curl --request POST \
