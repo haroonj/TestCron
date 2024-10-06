@@ -12,6 +12,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Check Mixpanel Token (Debug Placeholder)
+        env:
+          MIXPANEL_AUTH_TOKEN: ${{ secrets.MIXPANEL_AUTH_TOKEN }}
+        run: |
+          echo "Mixpanel Auth Token Length: ${#MIXPANEL_AUTH_TOKEN}"
+
       - name: List merged pull requests in this release
         uses: repo-sync/github-sync-pull-request@v2.1.0
         with:
